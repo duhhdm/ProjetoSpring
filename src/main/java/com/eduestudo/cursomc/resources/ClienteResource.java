@@ -9,12 +9,14 @@ import javax.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.eduestudo.cursomc.domain.Cliente;
@@ -36,6 +38,13 @@ public class ClienteResource {
 		
 	}
 	
+	@RequestMapping(value="/email/{value}",method=RequestMethod.GET)
+	public ResponseEntity<?> find(@PathVariable("value") String email){
+		Cliente obj = servico.findByEmail(email);
+		return ResponseEntity.ok().body(obj);
+		
+	}
+	
 	@RequestMapping(method=RequestMethod.POST)
 	public ResponseEntity<Void> insert(@Valid @RequestBody ClienteNewDTO objDTO){
 		Cliente obj = servico.fromDTO(objDTO);
@@ -53,12 +62,14 @@ public class ClienteResource {
 		return ResponseEntity.noContent().build();
 	}
 	
+	@PreAuthorize("hesAnyRole('ADMIN')")	
 	@RequestMapping(value="/{id}",method=RequestMethod.DELETE)
 	public ResponseEntity<Void> delete(@PathVariable Integer id){
 		servico.delete(id);
 		return ResponseEntity.noContent().build();
 	}
 	
+	@PreAuthorize("hesAnyRole('ADMIN')")	
 	@RequestMapping(method=RequestMethod.GET)
 	public ResponseEntity<?> findAll (){
 		List<Cliente> list = servico.buscarTudo();
@@ -66,6 +77,7 @@ public class ClienteResource {
 		return ResponseEntity.ok().body(objDTO);
 	}
 	
+	@PreAuthorize("hesAnyRole('ADMIN')")
 	@RequestMapping(value="page", method=RequestMethod.GET)
 	public ResponseEntity<?> findPage (
 			@RequestParam(value="page", defaultValue="0") Integer page,
@@ -76,4 +88,10 @@ public class ClienteResource {
 		Page<ClienteDTO> objDTO = list.map(obj -> new ClienteDTO(obj));
 		return ResponseEntity.ok().body(objDTO);
 	}
+	
+	@RequestMapping(value="/picture", method=RequestMethod.POST)
+	public ResponseEntity<Void> uploadProfilePicture(@RequestParam(name="file") MultipartFile file){
+		URI uri = servico.uploadProfilePicture(file);
+		return ResponseEntity.created(uri).build();
+	}	
 }
